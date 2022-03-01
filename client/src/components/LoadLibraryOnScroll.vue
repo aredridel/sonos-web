@@ -12,7 +12,7 @@ export default {
     },
     total: {
       type: Number,
-      default: 100,
+      default: 20,
     },
     libraryItem: {
       type: Object,
@@ -24,6 +24,10 @@ export default {
     },
     searchTerm: {
       type: String,
+      default: null,
+    },
+    resetItems: {
+      type: Function,
       default: null,
     },
   },
@@ -40,6 +44,18 @@ export default {
     window.removeEventListener('scroll', this.loadOnScroll, { passive: true });
   },
   methods: {
+    loadFromSearch() {
+      if (this.timeoutId) {
+        clearTimeout(this.timeoutId);
+      }
+      this.timeoutId = setTimeout(() => {
+        this.timeoutId = null;
+        this.loadMoreItems = true;
+        this.start = 0;
+        if (this.resetItems) this.resetItems();
+        this.loadItems(true);
+      }, 500);
+    },
     loadOnScroll() {
       if (this.bottomVisible()) {
         this.loadItems();
@@ -53,10 +69,10 @@ export default {
       const bottomOfPage = visible + scrollY >= pageHeight;
       return bottomOfPage || pageHeight < visible;
     },
-    async loadItems() {
+    async loadItems(search) {
       if (!this.loadMoreItems) return;
       if (this.loading) return;
-      if (this.duplicateRequest) {
+      if (this.duplicateRequest && !search) {
         this.loadMoreItems = false;
         return;
       }
@@ -71,10 +87,10 @@ export default {
         }
 
         if (result.data.total === '0') {
-          const error = new Error('404: Not Found');
+          const error = new Error('200: No results');
           error.response = {
-            status: 404,
-            data: 'Item Not Found',
+            status: 200,
+            data: 'No results',
           };
           throw error;
         }
@@ -108,6 +124,11 @@ export default {
         return true;
       }
       return false;
+    },
+  },
+  watch: {
+    searchTerm() {
+      this.loadFromSearch();
     },
   },
 };

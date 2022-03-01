@@ -12,9 +12,73 @@ Sonos Web has been tested on Windows 10, macOS, Linux, and Raspbian Stretch Lite
 
 [Check out the following Youtube video](https://youtu.be/0q8Z-XV81Z4) to see a brief demo of the system in use. (v0.5.2)
 
-## Features
-Sonos Web is a developing project and is not yet feature complete. If you would like to see a feature developed, please [open an issue](https://github.com/Villarrealized/sonos-web/issues/new).
+## Oh Fork it's a Fork!
 
+This is a fork of [Villarrealized's excellent project](https://github.com/Villarrealized/sonos-web), which appears to be abandoned.
+Despite only being a couple years old, the project has rotted quite quickly and developed many breaking issues.
+Several fixes were pulled into a branch by [stufisher](https://github.com/stufisher/sonos-web/tree/update_and_fix) which this fork uses.
+
+When I attempted to get this project working for myself I found that:
+* Docker images on Dockerhub that use sonos-web are based off the original project, and thus are broken.
+* The installation method [sonos-web-cli](https://github.com/Villarrealized/sonos-web-cli) is of course tied to the original project and is abit infuriating to dissect what its doing
+* It's non-obvious how to actually run the project from sources (at least for a node newbie?)
+* Even when I got it running with fixes, I still needed to fix an error from [node-sonos](https://github.com/bencevans/node-sonos) to get things running.
+
+So I have added a Makefile that builds and runs a server right from these sources, no sonos-web-cli necessary. Just do `make serve`.
+Right now this project depends on a fork of node-sonos, but I submitted a pull request to get the fixes upstream.
+
+I have also added a [Docker image to Dockerhub](https://hub.docker.com/r/kcghst/sonos-web) to make the project very convenient for Linux Docker users.
+
+## Build and run from sources
+
+```
+make serve
+```
+
+## Docker Support
+
+A minimal pre-built Docker image is available on [Dockerhub](https://hub.docker.com/r/kcghst/sonos-web).
+Only Linux is currently supported, as you need [Docker's host networking feature](https://docs.docker.com/network/host/) for Sonos device discovery. The actual web server uses port 5050 by default.
+
+From CLI or script:
+```
+docker run -it --net=host -e PORT=5050 kcghst/sonos-web
+```
+
+docker-compose.yml:
+```
+  sonos:
+    container_name: sonos
+    image: kcghst/sonos-web:latest
+    network_mode: "host"
+	environment:
+	  - PORT=5050
+```
+
+nginx.conf proxy:
+```
+	server {
+		server_name sonos.*;
+
+		location / {
+            proxy_pass http://$hostip:5050;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Protocol $scheme;
+            proxy_set_header X-Forwarded-Host $http_host;
+		}
+	}
+```
+
+## TODO?
+
+* It might be possible to avoid host networking by allowing manual pre-configuration of Sonos hosts
+* The Music Library doesn't work for me personally, I think it requires the Windows share?
+* Would be nice if it could browse music from a DLNA server, even nicer if it had access to everything the Sonos app does
+
+## Features
  * Music Library
     * Search your entire music library with Top Results *
       * Including Sonos Playlists! *
@@ -45,39 +109,6 @@ Sonos Web is a developing project and is not yet feature complete. If you would 
     * Spotify (added in v0.9.0)
       * Allow searching of Spotify
  * Recent Play History
-
-## Install
-The goal for this project is to make installation as simple as possible for Windows, Mac, & Linux.
-
-To this end, **sonos-web-cli** was created to be able to install Sonos Web by a single command in your terminal.
-
-If you do not already have npm installed, you must do so [here](https://www.npmjs.com/get-npm) before continuing.
-If you are on Linux, the best way is to install node (minimum v10 required) from source [here](https://github.com/nodesource/distributions)
-
-Once npm is installed, run the following commands in your terminal to get started:
-- `npm install -g sonos-web-cli`
-- `sonos-web install` (Installs and starts Sonos Web)
-- Open a browser to `http://localhost:5050` and enjoy!
-
-Run `sonos-web --help` for more options
-
-## Docker Support
-### Raspberry Pi
-Peter Toft (@pwt) is maintaining a [Docker image](https://hub.docker.com/r/psychlist/docker-sonos-web-arm) of sonos-web for later Raspberry Pi (ARMv7) systems.
-[Click here](https://github.com/pwt/docker-sonos-web-arm) to get started.
-
-### Windows & Mac
-Unfortunately, Linux is the only supported OS for using Docker with sonos-web because of the need to use `network_mode: 'host'` for discovering the Sonos network. It seems that, at least for now, [only Linux machines](https://docs.docker.com/network/network-tutorial-host/#prerequisites) have proper support at this point for that feature.
-
-> The host networking driver only works on Linux hosts, and is not supported on Docker for Mac, Docker for Windows, or Docker EE for Windows Server.
-
-
-Check out these issues for more information:
-
-https://github.com/docker/for-mac/issues/1031
-
-https://github.com/docker/for-win/issues/937
-
 
 ## Screenshots
 
@@ -117,16 +148,6 @@ https://github.com/docker/for-win/issues/937
 ### Adjust volume as a group or as individual rooms
 ![Grouped Rooms & Individual Volume Adjustment](https://user-images.githubusercontent.com/5977736/50566804-fdbead80-0cfa-11e9-86c9-21290ff33288.png)
 
-
-## Issues or Questions
-If you have any issues or a questions feel free to [open an issue](https://github.com/Villarrealized/sonos-web/issues/new)
-
-## Support
-Suggestions and feedback are always welcome. 
-
-If you like Sonos Web and would like to help fund further development of this project, you can do so through Beerpay.
-[![Beerpay](https://beerpay.io/Villarrealized/sonos-web/badge.svg?style=beer)](https://beerpay.io/Villarrealized/sonos-web)
-
-
 ## License
-[GPL v3.0](https://github.com/Villarrealized/sonos-web-cli/blob/master/LICENSE)
+[GPL v3.0](LICENSE)
+
